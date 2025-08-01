@@ -10,6 +10,8 @@ from test_communication import TestableSmsSender, TestableMailSender
 
 NOT_ON_THE_HOUR = datetime.strptime("2021/03/26 09:05", "%Y/%m/%d %H:%M")
 ON_THE_HOUR = datetime.strptime("2021/03/26 09:00", "%Y/%m/%d %H:%M")
+SUNDAY_ON_THE_HOUR = "2021/03/28 17:00"
+MONDAY_ON_THE_HOUR = "2024/06/03 17:00"
 CUSTOMER = Customer("Fake name", "010-1234-5678")
 CUSTOMER_WITH_MAIL = Customer("Fake name", "010-1234-5678", "test@test.com")
 
@@ -24,21 +26,6 @@ class TestableBookingScheduler(BookingScheduler):
 
     def get_now(self):
         return datetime.strptime(self._date_time, "%Y/%m/%d %H:%M")
-
-
-class SundayBookingScheduler(BookingScheduler):
-    def __init__(self, capacity_per_hour):
-        super().__init__(capacity_per_hour)
-
-    def get_now(self):
-        return datetime.strptime("2021/03/28 17:00", "%Y/%m/%d %H:%M")
-
-class MondayBookingScheduler(BookingScheduler):
-    def __init__(self, capacity_per_hour):
-        super().__init__(capacity_per_hour)
-
-    def get_now(self):
-        return datetime.strptime("2024/06/03 17:00", "%Y/%m/%d %H:%M")
 
 @pytest.fixture
 def booking_scheduler():
@@ -115,14 +102,14 @@ def test_이메일이_있는_경우에는_이메일_발송(booking_scheduler_wit
     assert mail_mock.send_mail_count == 1
 
 def test_현재날짜가_일요일인_경우_예약불가_예외처리():
-    booking_scheduler = SundayBookingScheduler(CAPACITY_PER_HOUR)
+    booking_scheduler = TestableBookingScheduler(CAPACITY_PER_HOUR, SUNDAY_ON_THE_HOUR)
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
 
     with pytest.raises(ValueError):
         booking_scheduler.add_schedule(schedule)
 
 def test_현재날짜가_일요일이_아닌경우_예약가능():
-    booking_scheduler = MondayBookingScheduler(CAPACITY_PER_HOUR)
+    booking_scheduler = TestableBookingScheduler(CAPACITY_PER_HOUR, MONDAY_ON_THE_HOUR)
     schedule = Schedule(ON_THE_HOUR, UNDER_CAPACITY, CUSTOMER)
 
     booking_scheduler.add_schedule(schedule)
